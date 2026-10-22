@@ -136,14 +136,24 @@ Liveness/readiness probe for monitoring tools (e.g., Kubernetes, AWS ECS).
 
 ## 🔄 CI/CD Pipeline
 
-The GitHub Actions workflow defined in [`.github/workflows/main.yml`](.github/workflows/main.yml) automatically runs on every push and pull request to the `main` branch:
+The GitHub Actions workflow defined in [`.github/workflows/main.yml`](.github/workflows/main.yml) runs on every push and pull request to the `main` branch:
 
-1. **Build & Test Job**:
-   - Checks out the code.
-   - Sets up Node.js versions (`20.x` and `22.x`) using matrix strategy and cache.
-   - Runs `npm ci` for deterministic dependency installation.
-   - Executes `npm test`.
+1. **Test Job (`test`)**:
+   - Runs on `ubuntu-latest`.
+   - Checks out the repository and sets up Node.js `22` with npm caching.
+   - Runs `npm ci` and `npm test`.
 
-2. **Docker Build Verification Job**:
-   - Runs after successful test completion.
-   - Validates that the Docker image builds without errors using Docker Buildx.
+2. **Build and Push Job (`build-and-push`)**:
+   - Runs only on pushes to `main` after the `test` job passes.
+   - Sets up Docker Buildx.
+   - Authenticates with Docker Hub using repository secrets.
+   - Builds and pushes images tagged with `:latest` and `:${{ github.sha }}`.
+
+### Required GitHub Secrets
+
+To allow the `build-and-push` job to publish images to Docker Hub, configure the following repository secrets under **Settings > Secrets and variables > Actions**:
+
+| Secret Name | Description |
+|---|---|
+| `DOCKERHUB_USERNAME` | Your Docker Hub account username |
+| `DOCKERHUB_TOKEN` | Your Docker Hub personal access token (PAT) |
